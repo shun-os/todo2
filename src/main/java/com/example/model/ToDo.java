@@ -11,34 +11,50 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
 public class ToDo {
-    private int id;
-    private StringProperty title = new SimpleStringProperty();          // タイトル
-    private ObjectProperty<LocalDate> date = new SimpleObjectProperty<>(); // 日付
-    private BooleanProperty completed = new SimpleBooleanProperty();        // 完了状態
-    // 重要度を示すプロパティ
-    private StringProperty priority = new SimpleStringProperty();           // 重要度
-    // 現在時刻
-    private ObjectProperty<LocalDateTime> nowTimestamp = new SimpleObjectProperty<>(LocalDateTime.now());
-    // +5分後と+10分後を設定するためのプロパティ
-    private ObjectProperty<LocalDateTime> addFiveTime = new SimpleObjectProperty<>();
-    private ObjectProperty<LocalDateTime> addTenTime = new SimpleObjectProperty<>();
 
-    // コンストラクタ
-    public ToDo(int id, String title, LocalDate date, boolean completed, String priority) {
-        this.id = id;
-        setTitle(title);
-        setDate(date);
-        setCompleted(completed);
-        setPriority(priority);
-        updateTimeProperties(); // コンストラクタで初期設定を行う
+    // 列挙型Priority
+    public enum Priority {
+        LOW, MEDIUM, HIGH;
     }
 
-    // idは読み取り専用
+    // フィールド
+    private final int id;
+    private String description;
+    private final StringProperty title = new SimpleStringProperty();          // タイトル
+    private final ObjectProperty<LocalDate> date = new SimpleObjectProperty<>(); // 日付
+    private final BooleanProperty completed = new SimpleBooleanProperty();    // 完了状態
+    private final ObjectProperty<Priority> priority = new SimpleObjectProperty<>(); // 優先度
+
+    private final ObjectProperty<LocalDateTime> nowTimestamp = new SimpleObjectProperty<>(LocalDateTime.now());
+    private final ObjectProperty<LocalDateTime> addFiveTime = new SimpleObjectProperty<>();
+    private final ObjectProperty<LocalDateTime> addTenTime = new SimpleObjectProperty<>();
+ // コンストラクタ
+    public ToDo(int id, String taskName, String description, LocalDate date, boolean completed, Priority priority) {
+        this.id = id;
+        this.title.set(taskName);                          // StringProperty に値を設定
+        this.description = description;                   // 直接代入
+        this.date.set(date);                               // ObjectProperty に値を設定
+        this.completed.set(completed);                    // BooleanProperty に値を設定
+        this.priority.set(priority);                      // ObjectProperty<Priority> に値を設定
+    }
+
+
+
+    
+    // IDは読み取り専用
     public int getId() {
         return id;
     }
 
-    // タイトルに関するメソッド
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    // タイトル
     public StringProperty titleProperty() {
         return title;
     }
@@ -51,7 +67,7 @@ public class ToDo {
         this.title.set(title);
     }
 
-    // 日付に関するメソッド
+    // 日付
     public ObjectProperty<LocalDate> dateProperty() {
         return date;
     }
@@ -63,8 +79,18 @@ public class ToDo {
     public void setDate(LocalDate localDate) {
         this.date.set(localDate);
     }
+    /*
+    public String getTaskName() {
+        return taskName;
+    }
 
-    // 完了状態に関するメソッド
+    public void setTaskName(String taskName) {
+        this.taskName = taskName;
+    }
+
+
+     */
+    // 完了状態
     public BooleanProperty completedProperty() {
         return completed;
     }
@@ -77,20 +103,29 @@ public class ToDo {
         this.completed.set(completed);
     }
 
-    // 重要度プロパティ
-    public StringProperty priorityProperty() {
+    // 重要度
+    public ObjectProperty<Priority> priorityProperty() {
         return priority;
     }
 
-    public String getPriority() {
+    public Priority getPriority() {
         return priority.get();
     }
 
-    public void setPriority(String priority) {
+    public void setPriority(Priority priority) {
         this.priority.set(priority);
     }
 
-    // 現在時刻に関するメソッド
+    // StringからPriorityへの変換メソッド (オーバーロード)
+    public void setPriority(String priority) {
+        try {
+            this.priority.set(Priority.valueOf(priority.toUpperCase()));
+        } catch (IllegalArgumentException | NullPointerException e) {
+            this.priority.set(Priority.LOW);  // デフォルト値
+        }
+    }
+
+    // 現在時刻
     public ObjectProperty<LocalDateTime> nowTimestampProperty() {
         return nowTimestamp;
     }
@@ -103,7 +138,7 @@ public class ToDo {
         nowTimestamp.set(LocalDateTime.now());
     }
 
-    // +5分後の時間を設定
+    // +5分後
     public void setAddFiveTime() {
         addFiveTime.set(getNowTimestamp().plusMinutes(5));
     }
@@ -116,7 +151,7 @@ public class ToDo {
         return addFiveTime.get();
     }
 
-    // +10分後の時間を設定
+    // +10分後
     public void setAddTenTime() {
         addTenTime.set(getNowTimestamp().plusMinutes(10));
     }
@@ -129,10 +164,20 @@ public class ToDo {
         return addTenTime.get();
     }
 
-    // 現在時刻、+5分、+10分の時間を一度に更新するメソッド
-    public void updateTimeProperties() {
-        updateNowTimestamp(); // 現在時刻を取得して設定
-        setAddFiveTime();     // +5分後を設定
-        setAddTenTime();      // +10分後を設定
+    // 時刻プロパティを更新
+    private void updateTimeProperties() {
+        nowTimestamp.addListener((obs, oldTime, newTime) -> {
+            setAddFiveTime();
+            setAddTenTime();
+        });
+        setAddFiveTime();
+        setAddTenTime();
     }
+    public String getTaskName() {
+        return taskName;
+    }
+    public void setTaskName(String taskName) {
+        this.taskName = taskName;
+    }
+    
 }

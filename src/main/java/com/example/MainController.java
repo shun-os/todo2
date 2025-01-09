@@ -13,6 +13,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
@@ -44,8 +45,12 @@ public class MainController {
     private TextField headerTitleField;
 //    @FXML
 //    private VBox todoListVBox;
+ 
     @FXML
-    private ListView<String> taskListView;
+    private ListView<ToDo> taskListView;
+    
+    private ToDoManager toDoManager;
+    
     private ToDoManager model;
     private LocalTime selectedTime;  // ユーザーが選択した時刻を保持
     private DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
@@ -97,7 +102,11 @@ public class MainController {
 //        ObservableList<Node> todoListItems = todoListVBox.getChildren();
         addBtn.setOnAction(e -> {
             String priority = "medium"; 
-            model.create(headerTitleField.getText(), headerDatePicker.getValue(), false, priority);
+            model.create(headerTitleField.getText(),
+            			descriptionField.getText(), 
+            			headerDatePicker.getValue(), 
+            			false, 
+            			priority);
             headerTitleField.clear();
         });
         model.todosProperty().addListener((ListChangeListener<ToDo>) change -> {
@@ -120,15 +129,26 @@ public class MainController {
         model.loadInitialData(); // Load initial data
     }
     private void loadTaskList() {
-        taskListView.getItems().clear(); 
+        taskListView.getItems().clear();
         for (ToDo todo : model.todosProperty()) {
-            String expectedText = String.format("%s - %s - %s",
-                    todo.getDate(),
-                    todo.getNowTimestamp().toLocalTime(), 
-                    todo.getPriority());
-            taskListView.getItems().add(expectedText);
+            taskListView.getItems().add(todo); // ToDoを直接リストに追加
         }
+        taskListView.setCellFactory(param -> new javafx.scene.control.ListCell<ToDo>() {
+            @Override
+            protected void updateItem(ToDo item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(String.format("%s - %s - %s", 
+                        item.getDate(), 
+                        item.getNowTimestamp().toLocalTime(),
+                        item.getPriority()));
+                }
+            }
+        });
     }
+
     public void initialize() {
         headerDatePicker.setValue(LocalDate.now());
         updateClock(); // 時計の初期化
@@ -139,6 +159,8 @@ public class MainController {
         nowButton.setOnAction(e -> setCurrentTime());
         fiveMinutesButton.setOnAction(e -> setFutureTime(5));
         tenMinutesButton.setOnAction(e -> setFutureTime(10));
+        toDoManager = new ToDoManager();
+        taskListView.setItems(toDoManager.getToDoList());
     }
     private void updateClock() {
         LocalTime now = LocalTime.now();
@@ -172,6 +194,34 @@ public class MainController {
             clockLabel.setText(selectedTime.format(timeFormatter));
             selectedTimeLabel.setText("選択された時刻: " + selectedTime.format(timeFormatter));
             selectedTimeLabel.setStyle("-fx-text-fill: blue; -fx-font-weight: bold;");
+        }
+    }
+    @FXML
+    private void handleDeleteButtonAction() {
+        // 選択されたアイテムを取得
+        ToDo selectedTask = taskListView.getSelectionModel().getSelectedItem();
+
+        if (selectedTask == null) {
+            // アイテムが選択されていない場合 - 警告を表示
+            Alert alert = new Alert(Alert.AlertType.WARNING, "削除するアイテムを選択してください。", ButtonType.OK);
+            alert.showAndWait();
+            return;
+        }
+
+        // 削除確認ダイアログを表示
+        Alert confirmationAlert = new Alert(
+            Alert.AlertType.CONFIRMATION,
+            "このアイテムを削除しますか？: " + selectedTask.getTaskName(),
+            ButtonType.YES, ButtonType.NO
+        );
+
+        ButtonType result = confirmationAlert.showAndWait().orElse(ButtonType.NO);
+        if (result == ButtonType.YES) {
+            // ToDoManagerから削除
+            toDoManager.remove(selectedTask);
+
+            // ListViewを更新
+            taskListView.setItems(toDoManager.getToDoList());
         }
     }
 }
