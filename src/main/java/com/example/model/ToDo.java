@@ -28,17 +28,19 @@ public class ToDo {
     private final ObjectProperty<LocalDateTime> nowTimestamp = new SimpleObjectProperty<>(LocalDateTime.now());
     private final ObjectProperty<LocalDateTime> addFiveTime = new SimpleObjectProperty<>();
     private final ObjectProperty<LocalDateTime> addTenTime = new SimpleObjectProperty<>();
- // コンストラクタ
-    public ToDo(int id, String taskName, String description, LocalDate date, boolean completed, Priority priority) {
+    private final StringProperty taskName = new SimpleStringProperty(); // ここでStringPropertyとして宣言
+    // コンストラクタ
+
+    public ToDo(int id, String title, String description, LocalDate date, boolean completed, Priority priority) {
         this.id = id;
-        this.title.set(taskName);                          // StringProperty に値を設定
-        this.description = description;                   // 直接代入
-        this.date.set(date);                               // ObjectProperty に値を設定
-        this.completed.set(completed);                    // BooleanProperty に値を設定
-        this.priority.set(priority);                      // ObjectProperty<Priority> に値を設定
+        this.title.set(title);
+        this.description = description;
+        this.date.set(date);
+        this.completed.set(completed);
+        this.priority.set(priority);
+        this.taskName.set(title); // コンストラクタで初期化 (必要に応じて変更)
+        updateTimeProperties();
     }
-
-
 
     
     // IDは読み取り専用
@@ -173,11 +175,14 @@ public class ToDo {
         setAddFiveTime();
         setAddTenTime();
     }
+    
+    
     public String getTaskName() {
-        return taskName;
+        return taskName.get();
     }
+
     public void setTaskName(String taskName) {
-        this.taskName = taskName;
+        this.taskName.set(taskName);
     }
     
 }

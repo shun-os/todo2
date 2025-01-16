@@ -53,10 +53,6 @@
         </VBox>
 
         <ListView fx:id="taskListView" prefHeight="200.0" prefWidth="610.0" />
-        <VBox spacing="10" alignment="CENTER" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" fx:controller="your.package.MainController">
-    <ListView fx:id="taskListView" prefWidth="300" prefHeight="400" />
-    <Button fx:id="deleteButton" text="Delete" onAction="#handleDeleteButtonAction" />
-</VBox>
+
     </children>
-    
 </VBox>

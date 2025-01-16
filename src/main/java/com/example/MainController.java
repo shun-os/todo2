@@ -2,7 +2,6 @@ package com.example;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List; // 追加インポート
 
 import com.example.model.ToDo;
 import com.example.model.ToDoManager;
@@ -43,6 +42,8 @@ public class MainController {
     private DatePicker headerDatePicker;
     @FXML
     private TextField headerTitleField;
+    @FXML
+    private TextField descriptionField;
 //    @FXML
 //    private VBox todoListVBox;
  
@@ -95,38 +96,22 @@ public class MainController {
         return todoItem; // HBoxを直接返す
     }
     public void initModel(ToDoManager manager) {
-        if (this.model != null)
+        if (this.toDoManager != null) {
             throw new IllegalStateException("Model can only be initialized once");
-        this.model = manager;
-        loadTaskList(); // Here you load tasks initially.
-//        ObservableList<Node> todoListItems = todoListVBox.getChildren();
+        }
+        this.toDoManager = manager;
+        toDoManager.loadInitialData();
+        toDoManager.todosProperty().addListener((ListChangeListener<ToDo>) c -> {
+            Platform.runLater(() -> taskListView.setItems(toDoManager.getToDoList()));
+        });
+        taskListView.setItems(toDoManager.getToDoList()); // 初期表示
+
         addBtn.setOnAction(e -> {
-            String priority = "medium"; 
-            model.create(headerTitleField.getText(),
-            			descriptionField.getText(), 
-            			headerDatePicker.getValue(), 
-            			false, 
-            			priority);
+            toDoManager.create(headerTitleField.getText(), descriptionField.getText(), headerDatePicker.getValue(), false, ToDo.Priority.MEDIUM);
             headerTitleField.clear();
+            descriptionField.clear();
+            headerDatePicker.setValue(LocalDate.now());
         });
-        model.todosProperty().addListener((ListChangeListener<ToDo>) change -> {
-            while (change.next()) {
-                if (change.wasAdded()) {
-                    change.getAddedSubList().forEach(todo -> {
-//                        todoListItems.add(createToDoHBox(todo));
-                        loadTaskList();
-                    });
-                }
-                if (change.wasRemoved()) {
-                    List<String> ids = change.getRemoved().stream()
-                        .map(todo -> TODO_ID_PREFIX + todo.getId())
-                        .toList();
-//                    todoListItems.removeIf(node -> ids.contains(node.getId()));
-                    loadTaskList();
-                }
-            }
-        });
-        model.loadInitialData(); // Load initial data
     }
     private void loadTaskList() {
         taskListView.getItems().clear();
@@ -159,8 +144,6 @@ public class MainController {
         nowButton.setOnAction(e -> setCurrentTime());
         fiveMinutesButton.setOnAction(e -> setFutureTime(5));
         tenMinutesButton.setOnAction(e -> setFutureTime(10));
-        toDoManager = new ToDoManager();
-        taskListView.setItems(toDoManager.getToDoList());
     }
     private void updateClock() {
         LocalTime now = LocalTime.now();
